@@ -51,7 +51,7 @@ class Position:
 
     # Advance method to go to next char and keep the track
     def advance(self, current_char):
-        self.index += 1 # Increase index and column count for each next character
+        self.index += 1  # Increase index and column count for each next character
         self.col += 1
         if current_char == "\n":
             # If the next character is \n (the implementation of next line) then reset column count and add 1 in line count
@@ -123,29 +123,38 @@ class Lexer:
                 # If there is space or tab skip that thing
                 self.advance()
             elif self.current_char in DIGITS:
+                # If there is digit proceed accordingly
                 tokens.append(self.make_number())
             elif self.current_char == "+":
+                # Implementation of addition
                 tokens.append(Token(TT_PLUS))
                 self.advance()
             elif self.current_char == "-":
+                # Implementation of subtraction
                 tokens.append(Token(TT_MINUS))
                 self.advance()
             elif self.current_char == "*":
+                # Implementation of multiplication
                 tokens.append(Token(TT_MUL))
                 self.advance()
             elif self.current_char == "/":
+                # Implementation of division
                 tokens.append(Token(TT_DIV))
                 self.advance()
             elif self.current_char == "%":
+                # Implementation of modulus
                 tokens.append(Token(TT_MOD))
                 self.advance()
             elif self.current_char == "(":
+                # Implementation of opening parenthesis
                 tokens.append(Token(TT_LPREN))
                 self.advance()
             elif self.current_char == ")":
+                # Implementation of closing parenthesis
                 tokens.append(Token(TT_RPREN))
                 self.advance()
             else:
+                # If nothing from above characters then return Illegal Character Exception
                 pos_start = self.pos.copy()
                 char = self.current_char
                 self.advance()
@@ -153,22 +162,27 @@ class Lexer:
         return tokens, None
 
     def make_number(self):
+        # Function to return if the number from input is Float (Dashank) of Integer (Sankhya/Purnank)
         num_str = ""
-        dot_count = 0
+        dot_count = 0   # Dot count if 0 then Sankhya if 1 then Dashank else invalid one
 
         while self.current_char != None and self.current_char in DIGITS + ".":
-            if self.current_char == ".":
+            if self.current_char == ".": 
+                # If the current number is . then do
                 if dot_count == 1:
+                    # If the . cound is already one then break as more than one dot count is illegal
                     break
-                dot_count += 1
-                num_str += "."
+                dot_count += 1 # Else if 0 then make it one as it may be Dashank
+                num_str += "." # Append that dot to the number string
             else:
-                num_str += self.current_char
+                num_str += self.current_char # If there is no dot then simply append that digit to the number string
             self.advance()
 
         if dot_count == 0:
+            # If dot count is one then return Int i.e. Sankhya
             return Token(TT_INT, int(num_str))
         else:
+            # If dot count is one then Dashank
             return Token(TT_FLOAT, float(num_str))
 
 
