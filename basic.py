@@ -179,6 +179,7 @@ class Lexer:
                 tokens.append(Token(TT_RPAREN, pos_start=self.pos))
                 self.advance()
             else:
+                # If the character is not either digit or arithmetic operator throw an error
                 pos_start = self.pos.copy()
                 char = self.current_char
                 self.advance()
@@ -230,6 +231,8 @@ class NumberNode:
         return f"{self.tok}"
 
 
+# If the binary operation is being performed then
+# like 4+4
 class BinOpNode:
     def __init__(self, left_node, op_tok, right_node):
         self.left_node = left_node
@@ -240,6 +243,8 @@ class BinOpNode:
         return f"({self.left_node}, {self.op_tok}, {self.right_node})"
 
 
+# If the unary operation is being performed then
+# like -3
 class UnaryOpNode:
     def __init__(self, op_tok, node):
         self.op_tok = op_tok
@@ -253,26 +258,27 @@ class UnaryOpNode:
 # PARSE RESULT
 #######################################
 
+
 # Class to add errors while parsing the input like InvalidSystaxError
-
-
 class ParseResult:
     def __init__(self):
         self.error = None
         self.node = None
 
+    # Register everything
     def register(self, res):
         if isinstance(res, ParseResult):
             if res.error:
                 self.error = res.error
             return res.node
-
         return res
 
+    # If parsing suceeds then return what you have created
     def success(self, node):
         self.node = node
         return self
 
+    # If there is error present then throw error as it is
     def failure(self, error):
         self.error = error
         return self
@@ -289,6 +295,7 @@ class Parser:
         self.tok_idx = -1
         self.advance()
 
+    # Advance function to look at next character from the input text
     def advance(
         self,
     ):
@@ -298,15 +305,18 @@ class Parser:
         return self.current_tok
 
     def parse(self):
+        # Parse an expression and store the result in 'res'
         res = self.expr()
+        # If there is no error and the current token is not EOF, return a failure result with an InvalidSyntaxError
         if not res.error and self.current_tok.type != TT_EOF:
             return res.failure(
                 InvalidSyntaxError(
                     self.current_tok.pos_start,
                     self.current_tok.pos_end,
-                    "Expected " + ", " - ", " * " or " / "",
+                    "Ganitiy Chinh Pahije",
                 )
             )
+        # Return the parsing result 'res'
         return res
 
     ###################################
@@ -316,6 +326,8 @@ class Parser:
         tok = self.current_tok
 
         if tok.type in (TT_PLUS, TT_MINUS):
+            # Implementation to look at the unary operations
+            # Unary operation: + or -
             res.register(self.advance())
             factor = res.register(self.factor())
             if res.error:
@@ -323,53 +335,77 @@ class Parser:
             return res.success(UnaryOpNode(tok, factor))
 
         elif tok.type in (TT_INT, TT_FLOAT):
+            # The block to manage int and float values
             res.register(self.advance())
             return res.success(NumberNode(tok))
 
+        # Implementation to handle opening parenthesis (
         elif tok.type == TT_LPAREN:
             res.register(self.advance())
             expr = res.register(self.expr())
             if res.error:
                 return res
+            # If respective closing parenthesis found then continue
+            # Return the successful parsing signal
             if self.current_tok.type == TT_RPAREN:
                 res.register(self.advance())
                 return res.success(expr)
+            # If no closing parenthesis then throow below error
             else:
                 return res.failure(
                     InvalidSyntaxError(
                         self.current_tok.pos_start,
                         self.current_tok.pos_end,
-                        "Ujava Nahi Bhetala",
+                        "Ujava apekshit hota ')'",
                     )
                 )
 
         return res.failure(
-            InvalidSyntaxError(tok.pos_start, tok.pos_end, "Expected int or float")
+            InvalidSyntaxError(tok.pos_start, tok.pos_end, "Sankhya Pahije hoti.")
         )
 
+    # If *,/ or % symbol is there then follow respective manner to perform binary operation
+    # term: factor ((GUNAKAR|BHAG|BAKI) factor)*
     def term(self):
         return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD))
 
+    # If + or - symbol is there then follow respective manner
+    # expr: term ((ADHIK|KAMI) term)*
     def expr(self):
         return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
 
     ###################################
 
     def bin_op(self, func, ops):
+        # Create a ParseResult object to track the parsing result
         res = ParseResult()
+        # Parse the left operand using the provided parsing function 'func'
         left = res.register(func())
+        # If there's an error in parsing the left operand, return the error
         if res.error:
             return res
 
+        # Continue parsing while the current token type is one of the specified operators 'ops'
         while self.current_tok.type in ops:
+            # Get the operator token
             op_tok = self.current_tok
+            # Advance to the next token
             res.register(self.advance())
+            # Parse the right operand using the provided parsing function 'func'
             right = res.register(func())
+            # If there's an error in parsing the right operand, return the error
             if res.error:
                 return res
+            # Create a BinOpNode with the left operand, operator, and right operand
             left = BinOpNode(left, op_tok, right)
 
+        # Return a successful result with the final parsed expression tree
         return res.success(left)
+
+
+#######################################
+# INTERPRETER
+#######################################
 
 
 #######################################
