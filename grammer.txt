@@ -1,0 +1,5 @@
+expr: term ((ADHIK|KAMI) term)*
+
+term: factor ((GUNAKAR|BHAG) factor)*
+
+factor: SANKHYA|DASHANK

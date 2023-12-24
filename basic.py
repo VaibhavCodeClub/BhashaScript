@@ -164,18 +164,20 @@ class Lexer:
     def make_number(self):
         # Function to return if the number from input is Float (Dashank) of Integer (Sankhya/Purnank)
         num_str = ""
-        dot_count = 0   # Dot count if 0 then Sankhya if 1 then Dashank else invalid one
+        dot_count = 0  # Dot count if 0 then Sankhya if 1 then Dashank else invalid one
 
         while self.current_char != None and self.current_char in DIGITS + ".":
-            if self.current_char == ".": 
+            if self.current_char == ".":
                 # If the current number is . then do
                 if dot_count == 1:
                     # If the . cound is already one then break as more than one dot count is illegal
                     break
-                dot_count += 1 # Else if 0 then make it one as it may be Dashank
-                num_str += "." # Append that dot to the number string
+                dot_count += 1  # Else if 0 then make it one as it may be Dashank
+                num_str += "."  # Append that dot to the number string
             else:
-                num_str += self.current_char # If there is no dot then simply append that digit to the number string
+                num_str += (
+                    self.current_char
+                )  # If there is no dot then simply append that digit to the number string
             self.advance()
 
         if dot_count == 0:
@@ -187,11 +189,92 @@ class Lexer:
 
 
 ################################
+# NODES
+################################
+
+
+class NumberNode:
+    def __init__(self, tok):
+        self.tok = tok
+
+    def __repr__(self):
+        return f"{self.tok}"
+
+
+class BinaryOpNode:
+    def __init__(self, left_node, op_tok, right_node):
+        self.left_node = left_node
+        self.op_tok = op_tok
+        self.right_node = right_node
+
+    def __repr__(self):
+        return f"({self.left_node},{self.op_tok},{self.right_node})"
+
+
+################################
+# PARSER
+################################
+
+
+class Parser:
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.token_index = -1
+        self.advance()
+
+    def advance(self):
+        self.token_index += 1
+        if self.token_index < len(self.tokens):
+            self.current_token = self.tokens[self.token_index]
+        return self.current_token
+
+    ################################################
+
+    def parse(self):
+        res = self.expr()
+        return res
+
+    def factor(self):
+        tok = self.current_token
+
+        if tok.type in (TT_INT, TT_FLOAT):
+            self.advance()
+            return NumberNode(tok)
+
+    def term(self):
+        return self.binary_operation(self.factor(), (TT_DIV, TT_MUL))
+
+    def expr(self):
+        return self.binary_operation(self.term(), (TT_MINUS, TT_PLUS))
+
+    #############################
+
+    def binary_operation(self, func, ops):
+        left = func
+
+        while self.current_token.type in ops:
+            op_tok = self.current_token
+            self.advance()
+            right = self.term()
+            left = BinaryOpNode(left, op_tok, right)
+        return left
+
+
+################################
 # RUN
 ################################
 
 
 def run(fn, text):
+    # Generate Tokens
+
     lexer = Lexer(fn, text)
     tokens, error = lexer.make_tokens()
-    return tokens, error
+    if error:
+        return None, error
+
+    # Generate Abstract Syntax Tree (AST)
+    parser = Parser(tokens)
+    ast = parser.parse()
+
+    return ast, None
