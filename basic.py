@@ -137,16 +137,16 @@ class Position:
 #######################################
 
 # TT stands for Token Type
-TT_INT = "SANKHYA"
-TT_FLOAT = "DASHANK"
-TT_PLUS = "ADHIK"
-TT_MINUS = "KAMI"
-TT_MUL = "GUNAKAR"
-TT_DIV = "BHAG"
-TT_MOD = "BAKI"  # Modulus
-TT_LPAREN = "DAVA"
-TT_RPAREN = "UJAVA"
-TT_EOF = "SHEVAT"
+TT_INT = "SANKHYA"  # To store values like 10
+TT_FLOAT = "DASHANK"  # To store values like 1.8
+TT_PLUS = "ADHIK"  # TO perform addition '+'
+TT_MINUS = "KAMI"  # TO perform subtraction '-'
+TT_MUL = "GUNAKAR"  # TO perform multiplication '*'
+TT_DIV = "BHAG"  # TO perform division '/'
+TT_MOD = "BAKI"  # TO perform modulus '%'
+TT_LPAREN = "DAVA"  # Opening parenthesis '('
+TT_RPAREN = "UJAVA"  # Closing parenthesis ')'
+TT_EOF = "SHEVAT"   # End Of File
 
 
 class Token:
