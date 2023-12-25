@@ -25,14 +25,21 @@ DIGITS = "0123456789"
 # This class will return the error messages for the exceptions occured during executione
 class Error:
     def __init__(self, pos_start, pos_end, error_name, details):
-        self.pos_start = pos_start  # Start positionn of the occurance of the error
-        self.pos_end = pos_end  # Ending of error
-        self.error_name = error_name  # Name of the error
-        self.details = details  # Details of the error
+        # Start positionn of the occurance of the error
+        self.pos_start = pos_start
+        # Ending of error
+        self.pos_end = pos_end
+        # Name of the error
+        self.error_name = error_name
+        # Details of the error
+        self.details = details
 
     def as_string(self):
-        result = f"{self.error_name}: {self.details}\n"  # Create the returning result with the combination of error name and the details
-        result += f"File {self.pos_start.fn}, line {self.pos_start.ln + 1}"  # Additionaly add the file name and line number of occureance of the error
+        # Create the returning result with the combination of error name and the details
+        result = f"{self.error_name}: {self.details}\n"
+        # Additionaly add the file name and line number of occureance of the error
+        result += f"File {self.pos_start.fn}, line {self.pos_start.ln + 1}"
+        # Where is error display wit the help of arrows
         result += "\n\n" + string_with_arrows(
             self.pos_start.ftxt, self.pos_start, self.pos_end
         )
@@ -53,6 +60,7 @@ class InvalidSyntaxError(Error):
 
 
 # Runtime error
+# This class is able to handle runtime errors like "divide by zero"
 class RTError(Error):
     def __init__(self, pos_start, pos_end, details, context):
         super().__init__(pos_start, pos_end, "Truti", details)
@@ -60,8 +68,10 @@ class RTError(Error):
 
     def as_string(self):
         result = self.generate_traceback()
-        result = f"{self.error_name}: {self.details}\n"  # Create the returning result with the combination of error name and the details
-        result += "\n" + string_with_arrows(
+        # Create the returning result with the combination of error name and the details
+        result += f"{self.error_name}: {self.details}"
+        # Add arrow to that specific error
+        result += "\n\n" + string_with_arrows(
             self.pos_start.ftxt, self.pos_start, self.pos_end
         )
         return result
@@ -72,14 +82,17 @@ class RTError(Error):
         ctx = self.context
 
         while ctx:
+            # Marathi translation of File name and line number of occurance o f the error
             result = (
-                f"  File {pos.fn}, line {str(pos.ln + 1)}, in {ctx.display_name}\n"
+                f"  Dastavej {pos.fn}, rang {str(pos.ln + 1)}, in {ctx.display_name}\n"
                 + result
             )
             pos = ctx.parent_entry_pos
             ctx = ctx.parent
+
         # Traceback (most recent call last)
-        return "Magova (sarvat alikadil zep):\n" + result
+        result = "Magova (Kahitari chukale):\n" + result
+        return result
 
 
 #######################################
@@ -267,18 +280,21 @@ class Lexer:
 #######################################
 
 
+# If there is number at the node then
 class NumberNode:
     def __init__(self, tok):
         self.tok = tok
-
+        # Retrive all the information related to that node
         self.pos_start = self.tok.pos_start
         self.pos_end = self.tok.pos_end
 
     def __repr__(self):
+        # return the its original value back
         return f"{self.tok}"
 
 
 # If the binary operation is being performed then
+# Divide that binary node into left and right part
 # like 4+4
 class BinOpNode:
     def __init__(self, left_node, op_tok, right_node):
@@ -286,6 +302,7 @@ class BinOpNode:
         self.op_tok = op_tok
         self.right_node = right_node
 
+        # Below lines divides the original binary operation to the new sub-trees hence evrything returns to the NumberNode
         self.pos_start = self.left_node.pos_start
         self.pos_end = self.right_node.pos_end
 
@@ -346,6 +363,7 @@ class ParseResult:
 #######################################
 
 
+# The original parse cass which is used to parse all the input taken
 class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -493,59 +511,61 @@ class RTResult:
 #######################################
 
 
+# This class actually takes the input then if there is arithmetic thing the correct result of that operation will be calculated and returned from this class
 class Number:
     def __init__(self, value):
+        # Retrive value from the input
         self.value = value
         self.set_pos()
         self.set_context()
 
     def set_pos(self, pos_start=None, pos_end=None):
+        # Save the start and end position to local variables
         self.pos_start = pos_start
         self.pos_end = pos_end
         return self
 
     def set_context(self, context=None):
+        # localize the context
         self.context = context
         return self
 
     def added_to(self, other):
+        # Perform the addition
         if isinstance(other, Number):
             return Number(self.value + other.value).set_context(self.context), None
 
     def subbed_by(self, other):
+        # Perform the subtraction
         if isinstance(other, Number):
             return Number(self.value - other.value).set_context(self.context), None
 
     def multed_by(self, other):
+        # Perform the multiplication
         if isinstance(other, Number):
             return Number(self.value * other.value).set_context(self.context), None
 
     def dived_by(self, other):
+        # Perform the division
         if isinstance(other, Number):
-            if other.value == 0:
-                return (
-                    None,
-                    RTError(
-                        other.pos_start,
-                        other.pos_end,
-                        "Shunya ne bhag",
-                        self.context,
-                    ),
-                )
-            return RTResult().success(
-                Number(self.value / other.value).set_context(self.context)
-            )
-
-    def mod_by(self, other):
-        if isinstance(other, Number):
+            # If the divisor is 0 then return error : Division by 0
             if other.value == 0:
                 return None, RTError(
                     other.pos_start, other.pos_end, "Shunya ne bhag", self.context
                 )
-            return (
-                Number(self.value % other.value).set_pos(self.pos_start, self.pos_end),
-                None,
-            )
+
+            return Number(self.value / other.value).set_context(self.context), None
+
+    def mod_by(self, other):
+        # Perform the Modulus
+        if isinstance(other, Number):
+            if other.value == 0:
+                # If the divisor is 0 then return error : Division by 0
+                return None, RTError(
+                    other.pos_start, other.pos_end, "Shunya ne bhag", self.context
+                )
+
+            return Number(self.value % other.value).set_context(self.context), None
 
     def __repr__(self):
         return str(self.value)
@@ -578,10 +598,10 @@ class Interpreter:
         method = getattr(self, method_name, self.no_visit_method)
         return method(node, context)
 
-    def no_visit_method(self, node, context):
-        raise Exception(f"No visit_{type(node),__name__} method defined")
+    def no_visit_method(self, node):
+        raise Exception(f"No visit_{type(node).__name__} method defined")
 
-    #################################
+    ###################################
 
     def visit_NumberNode(self, node, context):
         return RTResult().success(
@@ -609,11 +629,19 @@ class Interpreter:
             result, error = left.dived_by(right)
         elif node.op_tok.type == TT_MOD:
             result, error = left.mod_by(right)
-
         if error:
             return res.failure(error)
         else:
             return res.success(result.set_pos(node.pos_start, node.pos_end))
+
+        # return res.failure(
+        #     RTError(
+        #         node.pos_start,
+        #         node.pos_end,
+        #         "Invalid operands for binary operation",
+        #         context,
+        #     )
+        # )
 
     def visit_UnaryOpNode(self, node, context):
         res = RTResult()
@@ -654,7 +682,7 @@ def run(fn, text):
 
     # run code
     interpreter = Interpreter()
-    context = Context("program")
+    context = Context("<program>")
     result = interpreter.visit(ast.node, context)
 
     return result.value, result.error
