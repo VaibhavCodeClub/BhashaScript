@@ -16,4 +16,4 @@ jobs:
         python-version: 3.x
 
     - name: Run BhashaScript
-      run: python script.py
+      run: python basic.py
