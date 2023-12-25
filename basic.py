@@ -146,7 +146,7 @@ TT_DIV = "BHAG"  # TO perform division '/'
 TT_MOD = "BAKI"  # TO perform modulus '%'
 TT_LPAREN = "DAVA"  # Opening parenthesis '('
 TT_RPAREN = "UJAVA"  # Closing parenthesis ')'
-TT_EOF = "SHEVAT"   # End Of File
+TT_EOF = "SHEVAT"  # End Of File
 
 
 class Token:
@@ -686,3 +686,13 @@ def run(fn, text):
     result = interpreter.visit(ast.node, context)
 
     return result.value, result.error
+
+
+while True:
+    text = input("BS > ")
+    result, error = run("<stdin>", text)
+
+    if error:
+        print(error.as_string())
+    else:
+        print(result)
