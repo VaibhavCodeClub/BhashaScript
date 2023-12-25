@@ -16,4 +16,4 @@ jobs:
         python-version: 3.x
 
     - name: Run BhashaScript
-      run: python /path/to/your/BhashaScript/script.py
+      run: python script.py
