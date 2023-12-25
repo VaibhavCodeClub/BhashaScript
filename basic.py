@@ -687,12 +687,3 @@ def run(fn, text):
 
     return result.value, result.error
 
-
-while True:
-    text = input("BS > ")
-    result, error = run("<stdin>", text)
-
-    if error:
-        print(error.as_string())
-    else:
-        print(result)
