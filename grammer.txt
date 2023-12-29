@@ -1,7 +1,11 @@
-expr: term ((ADHIK|KAMI) term)*
+expr    : term ((ADHIK|KAMI) term)*
 
-term: factor ((GUNAKAR|BHAG|BAKI) factor)*
+term    : factor ((GUNAKAR|BHAG|BAKI) factor)*
 
-factor: SANKHYA|DASHANK
-        (PLUS|MINUS) factor
-        DAVA expr UJAVA
+factor  : (PLUS|MINUS) factor
+        : power
+
+power   : atom (GHAT factor)* 
+
+atom    : SANKHYA|DASHANK
+        : DAVA expr UJAVA

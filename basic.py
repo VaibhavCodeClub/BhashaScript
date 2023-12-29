@@ -144,6 +144,7 @@ TT_MINUS = "KAMI"  # TO perform subtraction '-'
 TT_MUL = "GUNAKAR"  # TO perform multiplication '*'
 TT_DIV = "BHAG"  # TO perform division '/'
 TT_MOD = "BAKI"  # TO perform modulus '%'
+TT_POW = "GHAT"  # TO perform power operation '^'
 TT_LPAREN = "DAVA"  # Opening parenthesis '('
 TT_RPAREN = "UJAVA"  # Closing parenthesis ')'
 TT_EOF = "SHEVAT"  # End Of File
@@ -226,6 +227,9 @@ class Lexer:
                 self.advance()
             elif self.current_char == "%":
                 tokens.append(Token(TT_MOD, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == "^":
+                tokens.append(Token(TT_POW, pos_start=self.pos))
                 self.advance()
             elif self.current_char == "(":
                 tokens.append(Token(TT_LPAREN, pos_start=self.pos))
@@ -396,20 +400,11 @@ class Parser:
 
     ###################################
 
-    def factor(self):
+    def atom(self):
         res = ParseResult()
         tok = self.current_tok
 
-        if tok.type in (TT_PLUS, TT_MINUS):
-            # Implementation to look at the unary operations
-            # Unary operation: + or -
-            res.register(self.advance())
-            factor = res.register(self.factor())
-            if res.error:
-                return res
-            return res.success(UnaryOpNode(tok, factor))
-
-        elif tok.type in (TT_INT, TT_FLOAT):
+        if tok.type in (TT_INT, TT_FLOAT):
             # The block to manage int and float values
             res.register(self.advance())
             return res.success(NumberNode(tok))
@@ -436,8 +431,28 @@ class Parser:
                 )
 
         return res.failure(
-            InvalidSyntaxError(tok.pos_start, tok.pos_end, "Sankhya Pahije hoti.")
+            InvalidSyntaxError(
+                tok.pos_start, tok.pos_end, "Sankhya kinva chinh Pahije hot."
+            )
         )
+
+    def power(self):
+        return self.bin_op(self.atom, (TT_POW,), self.factor)
+
+    def factor(self):
+        res = ParseResult()
+        tok = self.current_tok
+
+        if tok.type in (TT_PLUS, TT_MINUS):
+            # Implementation to look at the unary operations
+            # Unary operation: + or -
+            res.register(self.advance())
+            factor = res.register(self.factor())
+            if res.error:
+                return res
+            return res.success(UnaryOpNode(tok, factor))
+
+        return self.power()
 
     # If *,/ or % symbol is there then follow respective manner to perform binary operation
     # term: factor ((GUNAKAR|BHAG|BAKI) factor)*
@@ -451,7 +466,9 @@ class Parser:
 
     ###################################
 
-    def bin_op(self, func, ops):
+    def bin_op(self, func, ops, func2=None):
+        if func2 == None:
+            func2 = func
         # Create a ParseResult object to track the parsing result
         res = ParseResult()
         # Parse the left operand using the provided parsing function 'func'
@@ -467,7 +484,7 @@ class Parser:
             # Advance to the next token
             res.register(self.advance())
             # Parse the right operand using the provided parsing function 'func'
-            right = res.register(func())
+            right = res.register(func2())
             # If there's an error in parsing the right operand, return the error
             if res.error:
                 return res
@@ -544,6 +561,11 @@ class Number:
         # Perform the multiplication
         if isinstance(other, Number):
             return Number(self.value * other.value).set_context(self.context), None
+
+    def powed_by(self, other):
+        # Perform the power operation
+        if isinstance(other, Number):
+            return Number(self.value**other.value).set_context(self.context), None
 
     def dived_by(self, other):
         # Perform the division
@@ -629,6 +651,8 @@ class Interpreter:
             result, error = left.dived_by(right)
         elif node.op_tok.type == TT_MOD:
             result, error = left.mod_by(right)
+        elif node.op_tok.type == TT_POW:
+            result, error = left.powed_by(right)
         if error:
             return res.failure(error)
         else:
@@ -686,4 +710,3 @@ def run(fn, text):
     result = interpreter.visit(ast.node, context)
 
     return result.value, result.error
-
