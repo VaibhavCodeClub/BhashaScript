@@ -1,4 +1,5 @@
-expr    : term ((ADHIK|KAMI) term)*
+expr    : KEYWORD:VAR OLAKH BARABAR expr
+        : term ((ADHIK|KAMI) term)*
 
 term    : factor ((GUNAKAR|BHAG|BAKI) factor)*
 
@@ -7,5 +8,5 @@ factor  : (PLUS|MINUS) factor
 
 power   : atom (GHAT factor)* 
 
-atom    : SANKHYA|DASHANK
+atom    : SANKHYA|DASHANK|OLAKH
         : DAVA expr UJAVA
