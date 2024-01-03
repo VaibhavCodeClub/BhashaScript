@@ -21,5 +21,8 @@ test:
     - ps aux | grep "python3 script.py"
 
   after_script:
-  - rm -rf venv
+    - pwd
+    - ls -la
+    - rm -rf venv
+
 
