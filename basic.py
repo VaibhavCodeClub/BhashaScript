@@ -4,7 +4,10 @@
 #######################################
 #######################################
 
+# Import to add arrow where error is occured
 from strings_with_arrows import *
+
+# import to get all the alphabets to recognise identifiers
 import string
 
 #######################################
@@ -15,7 +18,9 @@ import string
 
 # Digits present in the input
 DIGITS = "0123456789"
+# all the alphabets are imported
 LETTERS = string.ascii_letters
+# combined alphabets and digits
 LETTERS_DIGITS = LETTERS + DIGITS
 
 #######################################
@@ -85,7 +90,7 @@ class RTError(Error):
         ctx = self.context
 
         while ctx:
-            # Marathi translation of File name and line number of occurance o f the error
+            # Marathi translation of File name and line number of occurance of the error
             result = (
                 f"  Dastavej {pos.fn}, rang {str(pos.ln + 1)}, in {ctx.display_name}\n"
                 + result
@@ -142,8 +147,8 @@ class Position:
 # TT stands for Token Type
 TT_INT = "SANKHYA"  # To store values like 10
 TT_FLOAT = "DASHANK"  # To store values like 1.8
-TT_IDENTIFIER = "OLAKH"  #
-TT_KEYWORD = "SANKET"
+TT_IDENTIFIER = "OLAKH"  # variable declaration
+TT_KEYWORD = "SANKET"  # To recognize keywords like loops
 TT_PLUS = "ADHIK"  # TO perform addition '+'
 TT_MINUS = "KAMI"  # TO perform subtraction '-'
 TT_MUL = "GUNAKAR"  # TO perform multiplication '*'
@@ -155,26 +160,34 @@ TT_LPAREN = "DAVA"  # Opening parenthesis '('
 TT_RPAREN = "UJAVA"  # Closing parenthesis ')'
 TT_EOF = "SHEVAT"  # End Of File
 
+# the declaration of 'var' im marathi 'he bagh' abbrevation
+# 'var a = 10' to be written as 'he a = 10'
 KEYWORDS = ["he"]
 
 
 class Token:
     def __init__(self, type_, value=None, pos_start=None, pos_end=None):
+        # Initialize a new Token with the provided type, value, and position information.
         self.type = type_
         self.value = value
 
+        # If starting position is provided, set pos_start and pos_end accordingly.
         if pos_start:
             self.pos_start = pos_start.copy()
             self.pos_end = pos_start.copy()
+            # Advance the ending position by one character.
             self.pos_end.advance()
 
+        # If ending position is provided, set pos_end accordingly.
         if pos_end:
             self.pos_end = pos_end
 
     def matches(self, type_, value):
+        # Check if the token matches the specified type and value.
         return self.type == type_ and self.value == value
 
     def __repr__(self):
+        # Return a string representation of the Token for debugging purposes.
         if self.value:
             return f"{self.type}:{self.value}"
         return f"{self.type}"
@@ -217,15 +230,19 @@ class Lexer:
             # If there is space or tab skip that thing
             if self.current_char in " \t":
                 self.advance()
+            # If the input contains digits then let it behave like number
             elif self.current_char in DIGITS:
                 tokens.append(self.make_number())
+            # If the input contains alphabets check if it is identifier if yes then let if behave like identifier
             elif self.current_char in LETTERS:
                 tokens.append(self.make_identifier())
-            # TODO
+            # TODO Implement comment
             # elif self.current_char == "#":
             # # Skip comments until the end of the line
             #     while self.current_char not in "\n":
             #         self.advance()
+
+            #  All the arithmetic operations and parenthesis are implemented here
             elif self.current_char == "+":
                 tokens.append(Token(TT_PLUS, pos_start=self.pos))
                 self.advance()
@@ -293,14 +310,21 @@ class Lexer:
             return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
 
     def make_identifier(self):
+        # Initialize an empty string to store the identifier.
         id_str = ""
+        # Copy the starting position for the identifier.
         pos_start = self.pos.copy()
 
+        # Loop until the current character is not None and is a letter, digit, or underscore.
         while self.current_char != None and self.current_char in LETTERS_DIGITS + "_":
+            # Add the current character to the identifier string.
             id_str += self.current_char
+            # Move to the next character.
             self.advance()
 
+        # Determine the token type based on whether the identifier is a keyword or a general identifier.
         tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+        # Create a Token instance with the determined type, identifier string, and position information.
         return Token(tok_type, id_str, pos_start, self.pos)
 
 
@@ -326,17 +350,22 @@ class NumberNode:
 
 class VarAccessNode:
     def __init__(self, var_name_tok):
+        # Initialize a VarAccessNode with the provided variable name token.
         self.var_name_tok = var_name_tok
 
+        # Set the position start and position end based on the variable name token.
         self.pos_start = self.var_name_tok.pos_start
         self.pos_end = self.var_name_tok.pos_end
 
 
 class VarAssignNode:
     def __init__(self, var_name_tok, value_node):
+        # Initialize a VarAssignNode with the provided variable name token and value node.
         self.var_name_tok = var_name_tok
         self.value_node = value_node
 
+        # Set the position start to the variable name token's position start.
+        # Set the position end to the value node's position end.
         self.pos_start = self.var_name_tok.pos_start
         self.pos_end = self.value_node.pos_end
 
@@ -392,17 +421,17 @@ class ParseResult:
 
     def register(self, res):
         self.advance_count += res.advance_count
+        # If there occurs an error return as it is
         if res.error:
             self.error = res.error
         return res.node
-        # If parsing suceeds then return what you have created
 
+    # If parsing suceeds then return what you have created
     def success(self, node):
         self.node = node
         return self
 
-        # If there is error present then throw error as it is
-
+    # If there is error present then throw error as it is
     def failure(self, error):
         if not self.error or self.advance_count == 0:
             self.error = error
@@ -460,6 +489,7 @@ class Parser:
             return res.success(NumberNode(tok))
 
         elif tok.type == TT_IDENTIFIER:
+            # manage identifiers here
             res.register_advancement()
             self.advance()
             return res.success(VarAccessNode(tok))
@@ -609,19 +639,23 @@ class Parser:
 
 class RTResult:
     def __init__(self):
+        #  Initialize the values as None
         self.value = None
         self.error = None
 
     def register(self, res):
+        #  register the values if there is erro rthen retunrn the error else simply return the value
         if res.error:
             self.error = res.error
         return res.value
 
     def success(self, value):
+        # if no error occured then simply return self by assigning the value to it
         self.value = value
         return self
 
     def failure(self, error):
+        # if there is any error then assign it to the self error and then return self
         self.error = error
         return self
 
