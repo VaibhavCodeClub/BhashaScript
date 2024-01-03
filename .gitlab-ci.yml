@@ -13,7 +13,14 @@ before_script:
 test:
   stage: test
   script:
-    - python script.py &  # Run script.py in the background
-    - sleep 5  # Give script.py some time to start (adjust as needed)
-    - echo "5" | python script.py  # Replace "User Input" with your actual input
-    - pkill -f "python script.py"  # Terminate the background process
+    - ps aux | grep "python3.8 script.py"
+    - python3.8 script.py &
+    - sleep 5
+    - echo "5" | python3.8 basic.py
+    - pkill -f "python3.8 script.py"
+    - ps aux | grep "python3.8 script.py"
+
+  after_script:
+  - deactivate
+  - rm -rf venv
+
