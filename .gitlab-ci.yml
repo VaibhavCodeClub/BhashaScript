@@ -21,8 +21,8 @@ test:
     - ps aux | grep "python3 script.py"
 
   after_script:
-    - pwd
-    - ls -la
-    - rm -rf venv
+    - ps aux | grep "python3 script.py"
+    - pkill -f "python3 script.py"
+    - ps aux | grep "python3 script.py"
 
 
