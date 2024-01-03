@@ -1,13 +1,18 @@
 import basic
+import sys
 
 while True:
-    text = input("BS > ")
-    result, error = basic.run("<stdin>", text)
+    try:
+        text = input("BS > ")
+        result, error = basic.run("<stdin>", text)
 
-    if error:
-        print(error.as_string())
-    else:
-        print(result)
+        if error:
+            print(error.as_string())
+        else:
+            print(result)
+    except KeyboardInterrupt:
+        print("\nDhanyawad...")
+        sys.exit(0)
 # import basic
 
 
