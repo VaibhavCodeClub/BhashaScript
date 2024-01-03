@@ -5,6 +5,8 @@ variables:
   PYTHON_VERSION: "3.8"
 
 before_script:
+  - apt-get update -qy  # Update package index
+  - apt-get install -y python3-venv  # Install python3-venv package
   - python3 -m venv venv
   - source venv/bin/activate
 
