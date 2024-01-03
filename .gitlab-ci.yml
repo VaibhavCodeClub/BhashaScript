@@ -21,6 +21,5 @@ test:
     - ps aux | grep "python3 script.py"
 
   after_script:
-  - deactivate
   - rm -rf venv
 
