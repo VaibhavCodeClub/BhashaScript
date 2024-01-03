@@ -1,12 +1,17 @@
-expr    : KEYWORD:VAR OLAKH BARABAR expr
-        : term ((ADHIK|KAMI) term)*
+expr            : KEYWORD:VAR OLAKH BARABAR expr
+                : comp-expr ((OLAKH:ani| OLAKH:kinva)comp-expr)*
 
-term    : factor ((GUNAKAR|BHAG|BAKI) factor)*
+comp-expr       : na comp-expr
+                : arith-expr ((SAMAN|JADA|KAMI|KAMI_SAMAN|JADA_SAMAN) arith-expr)*
 
-factor  : (PLUS|MINUS) factor
-        : power
+arith-expr      : term ((ADHIK|VAJA) term)*
 
-power   : atom (GHAT factor)* 
+term            : factor ((GUNAKAR|BHAG|BAKI) factor)*
 
-atom    : SANKHYA|DASHANK|OLAKH
-        : DAVA expr UJAVA
+factor          : (ADHIK|VAJA) factor
+                : power
+
+power           : atom (GHAT factor)* 
+
+atom            : SANKHYA|DASHANK|OLAKH
+                : DAVA expr UJAVA
