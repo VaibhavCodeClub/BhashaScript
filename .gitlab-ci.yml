@@ -13,12 +13,12 @@ before_script:
 test:
   stage: test
   script:
-    - ps aux | grep "python3.8 script.py"
-    - python3.8 script.py &
+    - ps aux | grep "python3 script.py"
+    - python3 script.py &
     - sleep 5
-    - echo "5" | python3.8 basic.py
-    - pkill -f "python3.8 script.py"
-    - ps aux | grep "python3.8 script.py"
+    - echo "5" | python3 basic.py
+    - pkill -f "python3 script.py"
+    - ps aux | grep "python3 script.py"
 
   after_script:
   - deactivate
