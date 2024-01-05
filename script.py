@@ -9,13 +9,13 @@ try:
 
             if error:
                 print(error.as_string())
-            else:
+            elif result:
                 print(result)
 
         except EOFError:
             print("\nSamapt")
             sys.exit(0)
-            
+
 except KeyboardInterrupt:
     print("\nDhanyawad...")
     sys.exit(0)

@@ -172,9 +172,18 @@ TT_LPAREN = "DAVA"  # Opening parenthesis '('
 TT_RPAREN = "UJAVA"  # Closing parenthesis ')'
 TT_EOF = "SHEVAT"  # End Of File
 
-# the declaration of 'var' im marathi 'he bagh' abbrevation
+
 # 'var a = 10' to be written as 'he a = 10'
-KEYWORDS = ["he", "ani", "kinva", "na"]
+KEYWORDS = [
+    "he",  # var - the declaration of 'var' im marathi 'he bagh' abbrevation
+    "ani",  # and
+    "kinva",  # or
+    "na",  # not
+    "jar",  # if
+    "tar",  # then
+    "nahijar",  # elif
+    "nahitar",  # else
+]
 
 
 class Token:
@@ -192,7 +201,7 @@ class Token:
 
         # If ending position is provided, set pos_end accordingly.
         if pos_end:
-            self.pos_end = pos_end
+            self.pos_end = pos_end.copy()
 
     def matches(self, type_, value):
         # Check if the token matches the specified type and value.
@@ -353,7 +362,7 @@ class Lexer:
 
         if self.current_char == "=":
             self.advance()
-            return Token(TT_NE, pos_start, pos_end=self.pos), None
+            return Token(TT_NE, pos_start=pos_start, pos_end=self.pos), None
         self.advance()
         return None, ExpectedCharError(
             pos_start, self.pos, "'!' chya nantar '=' pahije"
@@ -466,6 +475,15 @@ class UnaryOpNode:
         return f"({self.op_tok}, {self.node})"
 
 
+class IfNode:
+    def __init__(self, cases, else_case):
+        self.cases = cases
+        self.else_case = else_case
+
+        self.pos_start = self.cases[0][0].pos_start
+        self.pos_end = (self.else_case or self.cases[len(self.cases) - 1][0]).pos_end
+
+
 #######################################
 #######################################
 # PARSE RESULT
@@ -543,6 +561,79 @@ class Parser:
 
     ###################################
 
+    def if_expr(self):
+        res = ParseResult()
+        cases = []
+        else_case = None
+
+        if not self.current_tok.matches(TT_KEYWORD, "jar"):
+            return res.failure(
+                InvalidSyntaxError(
+                    self.current_tok.pos_start,
+                    self.current_tok.pos_end,
+                    f"'jar' pahije hote",
+                )
+            )
+
+        res.register_advancement()
+        self.advance()
+
+        condition = res.register(self.expr())
+        if res.error:
+            return res
+
+        if not self.current_tok.matches(TT_KEYWORD, "tar"):
+            return res.failure(
+                InvalidSyntaxError(
+                    self.current_tok.pos_start,
+                    self.current_tok.pos_end,
+                    f"'tar' pahije hote",
+                )
+            )
+
+        res.register_advancement()
+        self.advance()
+
+        expr = res.register(self.expr())
+        if res.error:
+            return res
+        cases.append((condition, expr))
+
+        while self.current_tok.matches(TT_KEYWORD, "nahijar"):
+            res.register_advancement()
+            self.advance()
+
+            condition = res.register(self.expr())
+            if res.error:
+                return res
+
+            if not self.current_tok.matches(TT_KEYWORD, "tar"):
+                return res.failure(
+                    InvalidSyntaxError(
+                        self.current_tok.pos_start,
+                        self.current_tok.pos_end,
+                        f"'tar' pahije hote",
+                    )
+                )
+
+            res.register_advancement()
+            self.advance()
+
+            expr = res.register(self.expr())
+            if res.error:
+                return res
+            cases.append((condition, expr))
+
+        if self.current_tok.matches(TT_KEYWORD, "nahitar"):
+            res.register_advancement()
+            self.advance()
+
+            else_case = res.register(self.expr())
+            if res.error:
+                return res
+
+        return res.success(IfNode(cases, else_case))
+
     def atom(self):
         res = ParseResult()
         tok = self.current_tok
@@ -572,7 +663,7 @@ class Parser:
                 res.register_advancement()
                 self.advance()
                 return res.success(expr)
-            # If no closing parenthesis then throow below error
+            # If no closing parenthesis then throw below error
             else:
                 return res.failure(
                     InvalidSyntaxError(
@@ -581,6 +672,11 @@ class Parser:
                         "Ujava apekshit hota ')'",
                     )
                 )
+        elif tok.matches(TT_KEYWORD, "jar"):
+            if_expr = res.register(self.if_expr())
+            if res.error:
+                return res
+            return res.success(if_expr)
 
         return res.failure(
             InvalidSyntaxError(
@@ -888,6 +984,9 @@ class Number:
         copy.set_context(self.context)
         return copy
 
+    def is_true(self):
+        return self.value != 0
+
     def __repr__(self):
         return str(self.value)
 
@@ -1060,6 +1159,28 @@ class Interpreter:
             return res.failure(error)
         else:
             return res.success(number.set_pos(node.pos_start, node.pos_end))
+
+    def visit_IfNode(self, node, context):
+        res = RTResult()
+
+        for condition, expr in node.cases:
+            condition_value = res.register(self.visit(condition, context))
+            if res.error:
+                return res
+
+            if condition_value.is_true():
+                expr_value = res.register(self.visit(expr, context))
+                if res.error:
+                    return res
+                return res.success(expr_value)
+
+        if node.else_case:
+            else_value = res.register(self.visit(node.else_case, context))
+            if res.error:
+                return res
+            return res.success(else_value)
+
+        return res.success(None)
 
 
 #######################################

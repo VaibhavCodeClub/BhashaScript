@@ -1,4 +1,4 @@
-expr            : KEYWORD:VAR OLAKH BARABAR expr
+expr            : OLAKH:VAR OLAKH BARABAR expr
                 : comp-expr ((OLAKH:ani| OLAKH:kinva)comp-expr)*
 
 comp-expr       : na comp-expr
@@ -15,3 +15,8 @@ power           : atom (GHAT factor)*
 
 atom            : SANKHYA|DASHANK|OLAKH
                 : DAVA expr UJAVA
+                : if-expr
+
+if-expr			: OLAKH :jar expr OLAKH:tar expr
+							(OLAKH:NAHIJAR  expr OLAKH:TR expr)*
+							(OLAKH:NAHITAR expr)?
