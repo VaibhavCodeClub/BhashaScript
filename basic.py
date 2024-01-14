@@ -183,6 +183,10 @@ KEYWORDS = [
     "tar",  # then
     "nahijar",  # elif
     "nahitar",  # else
+    "jowar", # while
+    "te", # to
+    # "chal" # for
+    # "step"
 ]
 
 
@@ -483,6 +487,13 @@ class IfNode:
         self.pos_start = self.cases[0][0].pos_start
         self.pos_end = (self.else_case or self.cases[len(self.cases) - 1][0]).pos_end
 
+class WhileNode:
+    def __init__(self, condition_node, body_node):
+        self.condition_node = condition_node
+        self.body_node = body_node
+
+        self.pos_start = self.condition_node.pos_start
+        self.pos_end = self.body_node.pos_end
 
 #######################################
 #######################################
@@ -633,6 +644,36 @@ class Parser:
                 return res
 
         return res.success(IfNode(cases, else_case))
+    
+    def while_expr(self):
+        res = ParseResult()
+
+        if not self.current_tok.matches(TT_KEYWORD, 'jowar'):
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                f"'jowar' pahije hote"
+            ))
+
+        res.register_advancement()
+        self.advance()
+
+        condition = res.register(self.expr())
+        if res.error: return res
+
+        if not self.current_tok.matches(TT_KEYWORD, 'tar'):
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                f"'tar' pahije hote"
+            ))
+
+        res.register_advancement()
+        self.advance()
+
+        body = res.register(self.expr())
+        if res.error: return res
+
+        return res.success(WhileNode(condition, body))
+
 
     def atom(self):
         res = ParseResult()
@@ -677,6 +718,11 @@ class Parser:
             if res.error:
                 return res
             return res.success(if_expr)
+
+        elif tok.matches(TT_KEYWORD, 'jowar'):
+            while_expr = res.register(self.while_expr())
+            if res.error: return res
+            return res.success(while_expr)
 
         return res.failure(
             InvalidSyntaxError(
@@ -1179,6 +1225,20 @@ class Interpreter:
             if res.error:
                 return res
             return res.success(else_value)
+
+        return res.success(None)
+
+    def visit_WhileNode(self, node, context):
+        res = RTResult()
+
+        while True:
+            condition = res.register(self.visit(node.condition_node, context))
+            if res.error: return res
+
+            if not condition.is_true(): break
+
+            res.register(self.visit(node.body_node, context))
+            if res.error: return res
 
         return res.success(None)
 

@@ -20,3 +20,5 @@ atom            : SANKHYA|DASHANK|OLAKH
 if-expr			: OLAKH :jar expr OLAKH:tar expr
 							(OLAKH:NAHIJAR  expr OLAKH:TR expr)*
 							(OLAKH:NAHITAR expr)?
+                            
+while-expr	    : OLAKH:jowar expr OLAKH:tar expr
