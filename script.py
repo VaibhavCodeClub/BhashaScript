@@ -1,5 +1,6 @@
 import basic
 import sys
+import readline
 
 try:
     while True:
@@ -19,6 +20,7 @@ try:
 except KeyboardInterrupt:
     print("\nDhanyawad...")
     sys.exit(0)
+
 # import basic
 
 
