@@ -153,6 +153,7 @@ class Position:
 # TT stands for Token Type
 TT_INT = "SANKHYA"  # To store values like 10
 TT_FLOAT = "DASHANK"  # To store values like 1.8
+TT_STRING = "SHABDA"
 TT_IDENTIFIER = "OLAKH"  # variable declaration
 TT_KEYWORD = "SANKET"  # To recognize keywords like loops
 TT_PLUS = "ADHIK"  # To perform addition '+'
@@ -264,6 +265,9 @@ class Lexer:
             # If the input contains alphabets check if it is identifier if yes then let if behave like identifier
             elif self.current_char in LETTERS:
                 tokens.append(self.make_identifier())
+            # if there exists double quotation then it must be the string
+            elif self.current_char == '"':
+                tokens.append(self.make_string())
             # TODO Implement comment
             # elif self.current_char == "#":
             # # Skip comments until the end of the line
@@ -346,6 +350,38 @@ class Lexer:
         else:
             # If dot count is one then Dashank
             return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
+
+    def make_string(self):
+        # initialisation of string value
+        string = ""
+        pos_start = self.pos.copy()
+        escape_character = False
+        self.advance()
+
+        escape_characters = {"n": "\n", "t": "\t"}
+
+        while self.current_char != None and (
+            # loop until the end of string
+            self.current_char != '"'
+            or escape_character
+        ):
+            if escape_character:
+                string += escape_characters.get(self.current_char, self.current_char)
+            else:
+                if self.current_char == "\\":
+                    # escape character
+                    escape_character = True
+                else:
+                    # append the next character
+                    string += self.current_char
+            self.advance()
+
+            # reset the escape charcter
+            escape_character = False
+
+        self.advance()
+        # return the token type string with the value
+        return Token(TT_STRING, string, pos_start, self.pos)
 
     def make_identifier(self):
         # Initialize an empty string to store the identifier.
@@ -439,6 +475,17 @@ class NumberNode:
 
     def __repr__(self):
         # return the its original value back
+        return f"{self.tok}"
+
+
+class StringNode:
+    def __init__(self, tok):
+        self.tok = tok
+
+        self.pos_start = self.tok.pos_start
+        self.pos_end = self.tok.pos_end
+
+    def __repr__(self):
         return f"{self.tok}"
 
 
@@ -782,6 +829,11 @@ class Parser:
             res.register_advancement()
             self.advance()
             return res.success(NumberNode(tok))
+
+        elif tok.type == TT_STRING:
+            res.register_advancement()
+            self.advance()
+            return res.success(StringNode(tok))
 
         elif tok.type == TT_IDENTIFIER:
             # manage identifiers here
@@ -1210,6 +1262,7 @@ class Number(Value):
         super().__init__()
         # Retrive value from the input
         self.value = value
+
     #     self.set_pos()
     #     self.set_context()
 
@@ -1361,6 +1414,39 @@ class Number(Value):
         return str(self.value)
 
 
+class String(Value):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+    def added_to(self, other):
+        # concatenate two strings together
+        if isinstance(other, String):
+            return String(self.value + other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def multed_by(self, other):
+        # if the string is multiplied by number it will be duplicated
+        if isinstance(other, Number):
+            return String(self.value * other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def is_true(self):
+        # string if the length is >=1
+        return len(self.value) > 0
+
+    def copy(self):
+        copy = String(self.value)
+        copy.set_pos(self.pos_start, self.pos_end)
+        copy.set_context(self.context)
+        return copy
+
+    def __repr__(self):
+        return f'"{self.value}"'
+
+
 class Function(Value):
     def __init__(self, name, body_node, arg_names):
         super().__init__()
@@ -1485,6 +1571,13 @@ class Interpreter:
     def visit_NumberNode(self, node, context):
         return RTResult().success(
             Number(node.tok.value)
+            .set_context(context)
+            .set_pos(node.pos_start, node.pos_end)
+        )
+
+    def visit_StringNode(self, node, context):
+        return RTResult().success(
+            String(node.tok.value)
             .set_context(context)
             .set_pos(node.pos_start, node.pos_end)
         )
