@@ -5,6 +5,8 @@
 #######################################
 
 # Import to add arrow where error is occured
+import math
+import os
 from strings_with_arrows import *
 
 # import to get all the alphabets to recognise identifiers
@@ -816,7 +818,7 @@ class Parser:
                     )
                 res.register_advancement()
                 self.advance()
-                return res.success(CallNode(atom, arg_nodes))
+            return res.success(CallNode(atom, arg_nodes))
 
         return res.success(atom)
 
@@ -1163,8 +1165,7 @@ class RTResult:
 
     def register(self, res):
         #  register the values if there is erro rthen retunrn the error else simply return the value
-        if res.error:
-            self.error = res.error
+        self.error = res.error
         return res.value
 
     def success(self, value):
@@ -1410,8 +1411,17 @@ class Number(Value):
     def is_true(self):
         return self.value != 0
 
+    def __str__(self):
+        return str(self.value)
+
     def __repr__(self):
         return str(self.value)
+
+
+Number.nay = Number(0)
+Number.ayogya = Number(0)
+Number.yogya = Number(1)
+Number.pi = Number(math.pi)
 
 
 class String(Value):
@@ -1443,50 +1453,80 @@ class String(Value):
         copy.set_context(self.context)
         return copy
 
+    def __str__(self):
+        return self.value
+
     def __repr__(self):
         return f'"{self.value}"'
 
 
-class Function(Value):
-    def __init__(self, name, body_node, arg_names):
+class BaseFunction(Value):
+    def __init__(self, name):
         super().__init__()
         self.name = name or "<anamit>"
+
+    def generate_new_context(self):
+        new_context = Context(self.name, self.context, self.pos_start)
+        new_context.symbol_table = SymbolTable(new_context.parent.symbol_table)
+        return new_context
+
+    def check_args(self, arg_names, args):
+        res = RTResult()
+
+        if len(args) > len(arg_names):
+            return res.failure(
+                RTError(
+                    self.pos_start,
+                    self.pos_end,
+                    f"{len(args) - len(arg_names)} karyasathi jast mahiti zali {self}",
+                    self.context,
+                )
+            )
+
+        if len(args) < len(arg_names):
+            return res.failure(
+                RTError(
+                    self.pos_start,
+                    self.pos_end,
+                    f"{len(arg_names) - len(args)} karyasathi mahiti kami padli {self}",
+                    self.context,
+                )
+            )
+
+        return res.success(None)
+
+    def populate_args(self, arg_names, args, exec_ctx):
+        for i in range(len(args)):
+            arg_name = arg_names[i]
+            arg_value = args[i]
+            arg_value.set_context(exec_ctx)
+            exec_ctx.symbol_table.set(arg_name, arg_value)
+
+    def check_and_populate_args(self, arg_names, args, exec_ctx):
+        res = RTResult()
+        res.register(self.check_args(arg_names, args))
+        if res.error:
+            return res
+        self.populate_args(arg_names, args, exec_ctx)
+        return res.success(None)
+
+
+class Function(BaseFunction):
+    def __init__(self, name, body_node, arg_names):
+        super().__init__(name)
         self.body_node = body_node
         self.arg_names = arg_names
 
     def execute(self, args):
         res = RTResult()
         interpreter = Interpreter()
-        new_context = Context(self.name, self.context, self.pos_start)
-        new_context.symbol_table = SymbolTable(new_context.parent.symbol_table)
+        exec_ctx = self.generate_new_context()
 
-        if len(args) > len(self.arg_names):
-            return res.failure(
-                RTError(
-                    self.pos_start,
-                    self.pos_end,
-                    f"{len(args) - len(self.arg_names)}  mahiti jast zali '{self.name}'",
-                    self.context,
-                )
-            )
+        res.register(self.check_and_populate_args(self.arg_names, args, exec_ctx))
+        if res.error:
+            return res
 
-        if len(args) < len(self.arg_names):
-            return res.failure(
-                RTError(
-                    self.pos_start,
-                    self.pos_end,
-                    f"{len(self.arg_names) - len(args)} mahiti kami zali '{self.name}'",
-                    self.context,
-                )
-            )
-
-        for i in range(len(args)):
-            arg_name = self.arg_names[i]
-            arg_value = args[i]
-            arg_value.set_context(new_context)
-            new_context.symbol_table.set(arg_name, arg_value)
-
-        value = res.register(interpreter.visit(self.body_node, new_context))
+        value = res.register(interpreter.visit(self.body_node, exec_ctx))
         if res.error:
             return res
         return res.success(value)
@@ -1499,6 +1539,107 @@ class Function(Value):
 
     def __repr__(self):
         return f"<karya {self.name}>"
+
+
+class BuiltInFunction(BaseFunction):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def execute(self, args):
+        res = RTResult()
+        exec_ctx = self.generate_new_context()
+
+        method_name = f"execute_{self.name}"
+        method = getattr(self, method_name, self.no_visit_method)
+
+        res.register(self.check_and_populate_args(method.arg_names, args, exec_ctx))
+        if res.error:
+            return res
+
+        return_value = res.register(method(exec_ctx))
+        if res.error:
+            return res
+        return res.success(return_value)
+
+    def no_visit_method(self, node, context):
+        raise Exception(f"execute_{self.name} karya milale nahi")
+
+    def copy(self):
+        copy = BuiltInFunction(self.name)
+        copy.set_context(self.context)
+        copy.set_pos(self.pos_start, self.pos_end)
+        return copy
+
+    def __repr__(self):
+        return f"<mul karya {self.name}>"
+
+    #####################################
+
+    def execute_dakhav(self, exec_ctx):
+        # output function
+        print(str(exec_ctx.symbol_table.get("value")))
+        return RTResult().success(Number.nay)
+
+    execute_dakhav.arg_names = ["value"]
+
+    def execute_ghe(self, exec_ctx):
+        # Input function
+        text = input()
+        return RTResult().success(String(text))
+
+    execute_ghe.arg_names = []
+
+    def execute_sankhya_ghe(self, exec_ctx):
+        #  take number as input
+        while True:
+            # loop till the input is number
+            text = input()
+            try:
+                number = int(text)
+                break
+            except ValueError:
+                # if not a number throw an error
+                print(f"'{text}' Sankhya pahije. Punha praytna kara!")
+        return RTResult().success(Number(number))
+
+    execute_sankhya_ghe.arg_names = []
+
+    def execute_saf(self, exec_ctx):
+        # clear the screen
+        os.system("cls" if os.name == "nt" else "clear")
+        return RTResult().success(Number.nay)
+
+    execute_saf.arg_names = []
+
+    def execute_sankhya_ahe(self, exec_ctx):
+        # check if the input is number or not
+        is_number = isinstance(exec_ctx.symbol_table.get("value"), Number)
+        return RTResult().success(Number.yogya if is_number else Number.ayogya)
+
+    execute_sankhya_ahe.arg_names = ["value"]
+
+    def execute_shabda_ahe(self, exec_ctx):
+        # check if the input is string or not
+        is_number = isinstance(exec_ctx.symbol_table.get("value"), String)
+        return RTResult().success(Number.yogya if is_number else Number.ayogya)
+
+    execute_shabda_ahe.arg_names = ["value"]
+
+    def execute_karya_ahe(self, exec_ctx):
+        # check if the input is function or not
+        is_number = isinstance(exec_ctx.symbol_table.get("value"), BaseFunction)
+        return RTResult().success(Number.yogya if is_number else Number.ayogya)
+
+    execute_karya_ahe.arg_names = ["value"]
+
+
+BuiltInFunction.dakhav = BuiltInFunction("dakhav")
+BuiltInFunction.ghe = BuiltInFunction("ghe")
+BuiltInFunction.sankhya_ghe = BuiltInFunction("sankhya_ghe")
+BuiltInFunction.saf = BuiltInFunction("saf")
+BuiltInFunction.sankhya_ahe = BuiltInFunction("sankhya_ahe")
+BuiltInFunction.shabda_ahe = BuiltInFunction("shabda_ahe")
+BuiltInFunction.karya_ahe = BuiltInFunction("karya_ahe")
 
 
 #######################################
@@ -1563,7 +1704,7 @@ class Interpreter:
         method = getattr(self, method_name, self.no_visit_method)
         return method(node, context)
 
-    def no_visit_method(self, node):
+    def no_visit_method(self, node, context):
         raise Exception(f"No visit_{type(node).__name__} method defined")
 
     ###################################
@@ -1594,7 +1735,7 @@ class Interpreter:
                     node.pos_start, node.pos_end, f"'{var_name}' milale nahi", context
                 )
             )
-        value = value.copy().set_pos(node.pos_start, node.pos_end)
+        value = value.copy().set_pos(node.pos_start, node.pos_end).set_context(context)
         return res.success(value)
 
     def visit_VarAssignNode(self, node, context):
@@ -1701,20 +1842,19 @@ class Interpreter:
 
     def visit_WhileNode(self, node, context):
         res = RTResult()
-
+        elements = []
         while True:
             condition = res.register(self.visit(node.condition_node, context))
             if res.error:
                 return res
-
             if not condition.is_true():
                 break
-
-            res.register(self.visit(node.body_node, context))
+            elements.append(res.register(self.visit(node.body_node, context)))
             if res.error:
                 return res
-
-        return res.success(None)
+        return res.success(
+            List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
 
     def visit_FuncDefNode(self, node, context):
         res = RTResult()
@@ -1750,6 +1890,11 @@ class Interpreter:
         return_value = res.register(value_to_call.execute(args))
         if res.error:
             return res
+        return_value = (
+            return_value.copy()
+            .set_pos(node.pos_start, node.pos_end)
+            .set_context(context)
+        )
         return res.success(return_value)
 
 
@@ -1762,9 +1907,17 @@ class Interpreter:
 # global symbol table
 global_symbol_table = SymbolTable()
 #  no reason
-global_symbol_table.set("NULL", Number(0))
-global_symbol_table.set("YOGYA", Number(1))
-global_symbol_table.set("AYOGYA", Number(0))
+global_symbol_table.set("NULL", Number.nay)
+global_symbol_table.set("YOGYA", Number.yogya)
+global_symbol_table.set("AYOGYA", Number.ayogya)
+global_symbol_table.set("PI", Number.pi)
+global_symbol_table.set("dakhav", BuiltInFunction.dakhav)
+global_symbol_table.set("ghe", BuiltInFunction.ghe)
+global_symbol_table.set("sankhya_ghe", BuiltInFunction.sankhya_ghe)
+global_symbol_table.set("saf", BuiltInFunction.saf)
+global_symbol_table.set("sankhya_ahe", BuiltInFunction.sankhya_ahe)
+global_symbol_table.set("shabda_ahe", BuiltInFunction.shabda_ahe)
+global_symbol_table.set("karya_ahe", BuiltInFunction.karya_ahe)
 
 
 def run(fn, text):
