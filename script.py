@@ -6,12 +6,16 @@ try:
     while True:
         try:
             text = input("BS > ")
+            if text.strip()=="": continue
             result, error = basic.run("<stdin>", text)
 
             if error:
                 print(error.as_string())
             elif result:
-                print(repr(result))
+                if len(result.elements) == 1:
+                    print(repr(result.elements[0]))
+                else:
+                    print(repr(result))
 
         except EOFError:
             print("\nSamapt")
