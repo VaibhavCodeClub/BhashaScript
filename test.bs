@@ -1,0 +1,8 @@
+he a=10
+dakhav(a)
+
+he a = a+10
+dakhav(a)
+
+dakhav("aa"*2)
+a
