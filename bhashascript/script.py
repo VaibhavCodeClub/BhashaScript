@@ -19,6 +19,8 @@ def main():
                                                                                          
          """
     )
+    print("Vaibhav ne tayar kelele.                               https://github.com/sapatevaibhav")
+    print("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°\n")
     try:
         while True:
             try:

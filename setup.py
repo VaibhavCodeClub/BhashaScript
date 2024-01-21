@@ -5,7 +5,7 @@ LONG_DESCRIPTION = "Marathi scripting language built upon Python 3. All the keyw
 
 setup(
     name="bhashascript",
-    version="1.0.0",
+    version="1.0.1",
     include_package_data=True,
     packages=find_packages(),
     install_requires=[],
