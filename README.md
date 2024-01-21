@@ -28,4 +28,4 @@ I have attached some screenshots to make sure you get actual idea of what is goi
 ### Tokens
 ![tokens](SS/token.png) .
 
-![visitors](https://visitor-badge.glitch.me/badge?page_id=VaibhavCodeClub.bhashascript)
+![visitors](https://visitor-badge.glitch.me/badge?page_id=VaibhavCodeClubvisitor-badge)
