@@ -1,0 +1,13 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+bhashascript/__init__.py
+bhashascript/basic.py
+bhashascript/script.py
+bhashascript/strings_with_arrows.py
+bhashascript.egg-info/PKG-INFO
+bhashascript.egg-info/SOURCES.txt
+bhashascript.egg-info/dependency_links.txt
+bhashascript.egg-info/entry_points.txt
+bhashascript.egg-info/top_level.txt

@@ -1,0 +1,3 @@
+[console_scripts]
+bhashascript = bhashascript.script:main
+

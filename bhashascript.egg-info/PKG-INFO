@@ -1,0 +1,23 @@
+Metadata-Version: 2.1
+Name: bhashascript
+Version: 1.0.0
+Summary: Marathi scripting language built upon Python 3
+Home-page: https://github.com/VaibhavCodeClub/BhashaScript
+Author: Sapate Vaibhav
+Author-email: sapatevaibhav@duck.com
+License: UNKNOWN
+Keywords: marathi,scripting,language,python
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+Marathi scripting language built upon Python 3. All the keywords, functions, errors are written in Marathi language.
+

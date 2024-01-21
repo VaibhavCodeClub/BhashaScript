@@ -7,7 +7,8 @@
 # Import to add arrow where error is occured
 import math
 import os
-from strings_with_arrows import *
+from .strings_with_arrows import strings_with_arrows
+
 
 # import to get all the alphabets to recognise identifiers
 import string
@@ -50,7 +51,7 @@ class Error:
         # Additionaly add the file name and line number of occureance of the error
         result += f"File {self.pos_start.fn}, line {self.pos_start.ln + 1}"
         # Where is error display wit the help of arrows
-        result += "\n\n" + string_with_arrows(
+        result += "\n\n" + strings_with_arrows(
             self.pos_start.ftxt, self.pos_start, self.pos_end
         )
         return result
@@ -87,7 +88,7 @@ class RTError(Error):
         # Create the returning result with the combination of error name and the details
         result += f"{self.error_name}: {self.details}"
         # Add arrow to that specific error
-        result += "\n\n" + string_with_arrows(
+        result += "\n\n" + strings_with_arrows(
             self.pos_start.ftxt, self.pos_start, self.pos_end
         )
         return result
@@ -1281,7 +1282,7 @@ class Parser:
                     InvalidSyntaxError(
                         self.current_tok.pos_start,
                         self.current_tok.pos_end,
-                        f"',' konva ')' pahije hote",
+                        f"',' kinva ')' pahije hote",
                     )
                 )
         else:
@@ -2135,14 +2136,6 @@ class Interpreter:
         else:
             return res.success(result.set_pos(node.pos_start, node.pos_end))
 
-        # return res.failure(
-        #     RTError(
-        #         node.pos_start,
-        #         node.pos_end,
-        #         "Invalid operands for binary operation",
-        #         context,
-        #     )
-        # )
 
     def visit_UnaryOpNode(self, node, context):
         res = RTResult()
